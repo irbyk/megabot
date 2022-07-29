@@ -1,4 +1,4 @@
 {
-  "listen_channel"        : "",
+  "listen_channel"        : "tests",
   "command_character"  : "%"
 }
