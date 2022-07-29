@@ -3,7 +3,6 @@ import { ChatInputCommandInteraction } from "discord.js";
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Bot } from "../../bot/bot.js";
 import { PlexSong } from "../../utils/plex/plex.js";
-import fetch from 'node-fetch';
 
 export const command =  {
 	data: new SlashCommandBuilder()

@@ -103,7 +103,7 @@ export function initializeCommand(commands: Collection<string, Command>, client:
 		const config = await loadConfig();
 		const { listen_channel, command_character } = config;
 		//////////////////////////////////
-		if(!(listen_channel == '' || (message.channel as TextChannel).name == listen_channel))
+		if(!(listen_channel === '' || (message.channel as TextChannel).name == listen_channel))
 			return;
 		const content = message.content;
 		if (!content.startsWith(command_character)) return

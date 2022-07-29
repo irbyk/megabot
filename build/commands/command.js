@@ -85,7 +85,7 @@ export function initializeCommand(commands, client, bot) {
         const config = await loadConfig();
         const { listen_channel, command_character } = config;
         //////////////////////////////////
-        if (!(listen_channel == '' || message.channel.name == listen_channel))
+        if (!(listen_channel === '' || message.channel.name == listen_channel))
             return;
         const content = message.content;
         if (!content.startsWith(command_character))
