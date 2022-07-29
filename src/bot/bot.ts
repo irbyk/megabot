@@ -178,20 +178,20 @@ export class Bot extends EventEmitter {
 			// console.dir(newState, {depth: 5});
 			console.log(`voiceConnection transitioned from ${oldState.status} to ${newState.status}`);
 
-			if (newState.status === 'signalling' && oldState.status === newState.status) {
-				this.voiceConnection?.removeListener("stateChange", handlerDisconnectTest);
-				console.log("Disconnect");
-				this.voiceConnection?.disconnect();
-				console.log("Destroy");
-				this.voiceConnection?.destroy();
-				console.log("Reconnect");
-				const voiceChannelReco = this.searchVoiceChannel(voiceChannelName);
-				if( voiceChannelReco === undefined) {
-					throw new Error(`The voice channel "${voiceChannelName}" cannot be find.`)
-				}
-				this.connectToVoicChannel(voiceChannelReco);
+			// if (newState.status === 'signalling' && oldState.status === newState.status) {
+			// 	this.voiceConnection?.removeListener("stateChange", handlerDisconnectTest);
+			// 	console.log("Disconnect");
+			// 	this.voiceConnection?.disconnect();
+			// 	console.log("Destroy");
+			// 	this.voiceConnection?.destroy();
+			// 	console.log("Reconnect");
+			// 	const voiceChannelReco = this.searchVoiceChannel(voiceChannelName);
+			// 	if( voiceChannelReco === undefined) {
+			// 		throw new Error(`The voice channel "${voiceChannelName}" cannot be find.`)
+			// 	}
+			// 	this.connectToVoicChannel(voiceChannelReco);
 				
-			}
+			// }
 		};
 		this.voiceConnection.on("stateChange" , handlerDisconnectTest);
 		this.emit(BotEvent.ConnectedToVoiceChannel, voiceChannel);
