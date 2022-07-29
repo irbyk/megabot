@@ -1,0 +1,69 @@
+{
+  "name": "megabot",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Modular bot for discord server.",
+  "main": "./build/main.js",
+  "types": "./build/main.d.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "build": "tsc --build src/tsconfig.build.json",
+    "watch": "tsc --watch --project src/tsconfig.build.json",
+    "start": "node -r source-map-support/register build/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/irbyk/megabot.git"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  },
+  "moduleDirectories": [
+    "node_modules",
+    "src"
+  ],
+  "keywords": [
+    "Discord",
+    "Discord.js",
+    "Bot",
+    "Modular"
+  ],
+  "author": "irbyk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/irbyk/megabot/issues"
+  },
+  "homepage": "https://github.com/irbyk/megabot#readme",
+  "devDependencies": {
+    "@types/jest": "*",
+    "@types/node": "*",
+    "@types/uuid": "*",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "eslint": "^8.19.0",
+    "jasmine": "^4.2.1",
+    "jest": "*",
+    "source-map-support": "*",
+    "ts-jest": "^28.0.5",
+    "ts-node": "*",
+    "typescript": "*"
+  },
+  "dependencies": {
+    "@discordjs/builders": "*",
+    "@discordjs/opus": "^0.8.0",
+    "@discordjs/rest": "*",
+    "@discordjs/voice": "*",
+    "bufferutil": "^4.0.6",
+    "discord-api-types": "*",
+    "discord.js": "^14.0.3",
+    "erlpack": "github:discord/erlpack",
+    "fast-xml-parser": "*",
+    "ffmpeg-static": "*",
+    "libsodium-wrappers": "*",
+    "node-fetch": "*",
+    "utf-8-validate": "^5.0.9",
+    "uuid": "*",
+    "zlib-sync": "^0.1.7"
+  }
+}
