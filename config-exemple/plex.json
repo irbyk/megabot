@@ -1,0 +1,14 @@
+{
+  "hostname"    : "localhost",
+  "port"        : "32400",
+  "token"       : "PLEX_TOKEN",
+  "managedUser" : "Your nickname",
+  "options"     : {
+    "identifier": "bot.discord.0.1",
+    "product"   : "Plex Discord Bot",
+    "version"   : "0.1",
+    "deviceName": "Plex Bot Server",
+    "platform"  : "Discord",
+    "device"    : "Discord"
+  }
+}
