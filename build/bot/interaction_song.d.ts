@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { ActionRowBuilder, APIAttachment, Attachment, AttachmentBuilder, AttachmentPayload, BufferResolvable, ButtonBuilder, EmbedBuilder, InteractionReplyOptions, JSONEncodable } from 'discord.js';
 import { Stream } from 'stream';
-import { Song } from './bot.js';
+import { Song } from './song.js';
 export declare class InteractionSong implements InteractionReplyOptions {
     content: string;
     embeds?: EmbedBuilder[];

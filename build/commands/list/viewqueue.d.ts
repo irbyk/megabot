@@ -5,4 +5,4 @@ export declare const command: {
     data: SlashCommandBuilder;
     execute(interaction: CommandInteraction, bot: Bot): Promise<void>;
 };
-//# sourceMappingURL=test.d.ts.map
+//# sourceMappingURL=viewqueue.d.ts.map

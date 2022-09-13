@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { createAudioPlayer } from '@discordjs/voice';
 import {jest} from '@jest/globals';
+
 import { PlexAPIConfig } from '../../utils/plex/plexAPI.js';
 
 jest.mock('discord.js', () => {

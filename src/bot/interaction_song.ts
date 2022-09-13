@@ -1,6 +1,6 @@
 import { ActionRowBuilder,  APIAttachment,  Attachment,  AttachmentBuilder,  AttachmentPayload,  BufferResolvable,  ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, JSONEncodable } from 'discord.js';
 import { Stream } from 'stream';
-import { Song } from './bot.js';
+import { Song } from './song.js';
 
 export class InteractionSong implements InteractionReplyOptions {
 	

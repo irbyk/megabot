@@ -1,8 +1,8 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, SelectMenuBuilder } from "discord.js";
+import { ChatInputCommandInteraction, SelectMenuBuilder } from "discord.js";
 
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Bot, Song } from "../../bot/bot.js";
-import { PlexSong } from "../../utils/plex/plex.js";
+import { Bot } from "../../bot/bot.js";
+import { Song } from "../../bot/song.js";
 
 export const command =  {
 	data: new SlashCommandBuilder()
@@ -21,23 +21,28 @@ export const command =  {
 		}
 		const songs: Song[] = await bot.searchSongs(songName);
 		
+		console.log("Songs found : ");
 		console.dir(songs);
-		const selectMenu = new SelectMenuBuilder()
-			.setCustomId('select_search_song');
-			//.setPlaceholder('Nothing selected');
-		for (const song of songs) {
-			selectMenu.addOptions({
-				label: song.title,
-				description: song.album +", " + song.artist,
-				value: song.key,
-			})
+
+		if(songs.length > 0) {
+			const selectMenu = new SelectMenuBuilder()
+				.setCustomId('select_search_song');
+				//.setPlaceholder('Nothing selected');
+			for (const song of songs) {
+				selectMenu.addOptions({
+					label: song.title,
+					description: song.album +", " + song.artist,
+					value: song.key,
+				})
+			}
+			
+
+			const response = await bot.setSelectMenu(selectMenu);
+
+			await interaction.reply(response);
+		} else {
+			await interaction.reply("No song found :cry:.");
 		}
-		
-
-		const response = await bot.setSelectMenu(selectMenu);
-
-		await interaction.reply(response);
-		
 		// try { 
 		// 	bot.loadSong(song);
 

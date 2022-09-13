@@ -3,10 +3,10 @@ import { initializeCommand } from "../commands/command.js";
 import { Plex, PlexSong } from "../utils/plex/plex.js"
 import { PlexAPIConfig } from "../utils/plex/plexAPI.js";
 import { AudioPlayer, AudioResource, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, AudioPlayerStatus, VoiceConnectionStatus, NoSubscriberBehavior, VoiceConnectionState } from "@discordjs/voice";
-import fetch from "node-fetch";
 
-import { Readable } from "stream";
 import EventEmitter from "events";
+import { Song } from "./song.js";
+import { Queue } from "./queue.js";
 
 export enum BotEvent {
 	Ready = "ready",
@@ -30,7 +30,7 @@ export class Bot extends EventEmitter {
 	private playing: boolean;
 	private paused: boolean;
 	private initialized: boolean;
-	private songQueue: Song[];
+	private songQueue: Queue;
 	private songInteraction: InteractionReplyOptions | undefined;
 
 	constructor(client: Client, plexConfig: PlexAPIConfig) {
@@ -66,31 +66,41 @@ export class Bot extends EventEmitter {
 			console.log(`Audio player raise ${error}`);
 			console.error(error);
 		});
+
+
 		this.player.on(AudioPlayerStatus.Idle, () => {
 			this.paused = false;
 			this.playing = false;
 			this.song = undefined;
-			if (this.songQueue.length > 0) {
-				this.song = this.songQueue.shift();
+			try {
+				this.song = this.songQueue.next();
 				this.playSong(this.song);
+			} catch (err) {
+				// No need to handle this error;
 			}
 			this.emit(BotEvent.Stopped);
 			console.log("AudioPlayerStatus.Idle");
 		});
+
+
 		this.player.on(AudioPlayerStatus.Paused, () => {
 			this.paused = true;
 			console.log("AudioPlayerStatus.Paused");
 		});
+
+
 		this.player.on(AudioPlayerStatus.AutoPaused, () => {
 			this.paused = true;
 			console.log("AudioPlayerStatus.AutoPaused");
 		});
+
+
 		this.player.on(AudioPlayerStatus.Buffering, () => {
 			this.paused = true;
 			console.log("AudioPlayerStatus.Buffering");
 		});
 
-		this.songQueue = [];
+		this.songQueue = new Queue();
 		}
 
 	public isPlaying() {
@@ -114,6 +124,10 @@ export class Bot extends EventEmitter {
 		} else {
 			throw new Error("The bot is already initialized.")
 		}
+	}
+
+	public getQueue(): Queue {
+		return this.songQueue;
 	}
 
 	public isInitialized(): boolean {
@@ -177,7 +191,7 @@ export class Bot extends EventEmitter {
 			console.error(error);
 		});
 		this.voiceConnection.on('debug', console.log);
-		const voiceChannelName = voiceChannel.name;
+		//const voiceChannelName = voiceChannel.name;
 		const handlerDisconnectTest = (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
 			// console.dir(newState, {depth: 5});
 			console.log(`voiceConnection transitioned from ${oldState.status} to ${newState.status}`);
@@ -264,7 +278,7 @@ export class Bot extends EventEmitter {
 	}
 
 	public stop() {
-		this.songQueue = [];
+		this.songQueue.setIndex(this.songQueue.getLenght());
 		this.player.stop();
 	}
 
@@ -272,7 +286,11 @@ export class Bot extends EventEmitter {
 		this.client.destroy();
 	}
 
-	private async generateSongInteraction(song: PlexSong, isPaused = false): Promise<InteractionReplyOptions> {
+	public getClient() : Client {
+		return this.client;
+	}
+
+	public async generateSongInteraction(song: PlexSong, isPaused = false): Promise<InteractionReplyOptions> {
 		try {
 			const imageBuffer = await this.plex.loadPicture(song);
 			const row = new ActionRowBuilder<ButtonBuilder>()
@@ -376,63 +394,3 @@ export class Bot extends EventEmitter {
 	}
 }
 
-export interface SongJSON {
-	album: string;
-	artist: string;
-	key: string;
-	mediaKey: string;
-	title: string;
-	pictureKey: string;
-
-}
-
-export class Song implements PlexSong {
-	
-	public album: string;
-	public artist: string;
-	public key: string;
-	public mediaKey: string;
-	public title: string;
-	//public url: string;
-	public ressource: AudioResource | undefined;
-	public loaded: boolean;
-	public pictureKey: string;
-
-
-	constructor(song: PlexSong) {
-		this.album = song.album;
-		this.artist = song.artist;
-		this.key = song.key;
-		this.mediaKey = song.mediaKey,
-		this.title = song.title;
-		//this.url = song.url;
-		this.loaded = song.loaded;
-		this.pictureKey = song.pictureKey;
-		this.ressource = song.ressource;
-	}
-
-	public toJSON(): SongJSON {
-		return {
-			album: this.album,
-			artist: this.artist,
-			key: this.key,
-			mediaKey: this.mediaKey,
-			pictureKey: this.pictureKey,
-			title: this.title
-		}
-	}
-
-	public static fromJSON(songJSON: SongJSON): PlexSong {
-		return new Song({
-			album: songJSON.album,
-			artist: songJSON.artist,
-			key: songJSON.key,
-			mediaKey: songJSON.mediaKey,
-			loaded: false,
-			pictureKey: songJSON.pictureKey,
-			ressource: undefined,
-			title: songJSON.title
-		});
-	}
-
-}

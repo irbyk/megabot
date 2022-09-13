@@ -1,8 +1,9 @@
 import { Client, InteractionReplyOptions, VoiceBasedChannel, SelectMenuBuilder } from "discord.js";
 import { PlexSong } from "../utils/plex/plex.js";
 import { PlexAPIConfig } from "../utils/plex/plexAPI.js";
-import { AudioResource } from "@discordjs/voice";
 import EventEmitter from "events";
+import { Song } from "./song.js";
+import { Queue } from "./queue.js";
 export declare enum BotEvent {
     Ready = "ready",
     Played = "played",
@@ -30,6 +31,7 @@ export declare class Bot extends EventEmitter {
     isPaused(): boolean;
     isInVocalChannel(): boolean;
     setInitialize(value: boolean): void;
+    getQueue(): Queue;
     isInitialized(): boolean;
     start(botToken: string): Promise<void>;
     searchSong(songName: string): Promise<PlexSong>;
@@ -46,28 +48,8 @@ export declare class Bot extends EventEmitter {
     skip(): void;
     stop(): void;
     destroy(): void;
-    private generateSongInteraction;
+    getClient(): Client;
+    generateSongInteraction(song: PlexSong, isPaused?: boolean): Promise<InteractionReplyOptions>;
     setSelectMenu(selectMenu: SelectMenuBuilder): Promise<InteractionReplyOptions>;
-}
-export interface SongJSON {
-    album: string;
-    artist: string;
-    key: string;
-    mediaKey: string;
-    title: string;
-    pictureKey: string;
-}
-export declare class Song implements PlexSong {
-    album: string;
-    artist: string;
-    key: string;
-    mediaKey: string;
-    title: string;
-    ressource: AudioResource | undefined;
-    loaded: boolean;
-    pictureKey: string;
-    constructor(song: PlexSong);
-    toJSON(): SongJSON;
-    static fromJSON(songJSON: SongJSON): PlexSong;
 }
 //# sourceMappingURL=bot.d.ts.map

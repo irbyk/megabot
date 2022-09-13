@@ -17,19 +17,25 @@ export const command = {
             return;
         }
         const songs = await bot.searchSongs(songName);
+        console.log("Songs found : ");
         console.dir(songs);
-        const selectMenu = new SelectMenuBuilder()
-            .setCustomId('select_search_song');
-        //.setPlaceholder('Nothing selected');
-        for (const song of songs) {
-            selectMenu.addOptions({
-                label: song.title,
-                description: song.album + ", " + song.artist,
-                value: song.key,
-            });
+        if (songs.length > 0) {
+            const selectMenu = new SelectMenuBuilder()
+                .setCustomId('select_search_song');
+            //.setPlaceholder('Nothing selected');
+            for (const song of songs) {
+                selectMenu.addOptions({
+                    label: song.title,
+                    description: song.album + ", " + song.artist,
+                    value: song.key,
+                });
+            }
+            const response = await bot.setSelectMenu(selectMenu);
+            await interaction.reply(response);
         }
-        const response = await bot.setSelectMenu(selectMenu);
-        await interaction.reply(response);
+        else {
+            await interaction.reply("No song found :cry:.");
+        }
         // try { 
         // 	bot.loadSong(song);
         // 	if(!bot.isPlaying()) await bot.play();

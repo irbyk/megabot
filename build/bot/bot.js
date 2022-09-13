@@ -3,6 +3,8 @@ import { initializeCommand } from "../commands/command.js";
 import { Plex } from "../utils/plex/plex.js";
 import { createAudioPlayer, createAudioResource, joinVoiceChannel, AudioPlayerStatus, VoiceConnectionStatus, NoSubscriberBehavior } from "@discordjs/voice";
 import EventEmitter from "events";
+import { Song } from "./song.js";
+import { Queue } from "./queue.js";
 export var BotEvent;
 (function (BotEvent) {
     BotEvent["Ready"] = "ready";
@@ -62,9 +64,12 @@ export class Bot extends EventEmitter {
             this.paused = false;
             this.playing = false;
             this.song = undefined;
-            if (this.songQueue.length > 0) {
-                this.song = this.songQueue.shift();
+            try {
+                this.song = this.songQueue.next();
                 this.playSong(this.song);
+            }
+            catch (err) {
+                // No need to handle this error;
             }
             this.emit(BotEvent.Stopped);
             console.log("AudioPlayerStatus.Idle");
@@ -81,7 +86,7 @@ export class Bot extends EventEmitter {
             this.paused = true;
             console.log("AudioPlayerStatus.Buffering");
         });
-        this.songQueue = [];
+        this.songQueue = new Queue();
     }
     isPlaying() {
         return this.playing;
@@ -102,6 +107,9 @@ export class Bot extends EventEmitter {
         else {
             throw new Error("The bot is already initialized.");
         }
+    }
+    getQueue() {
+        return this.songQueue;
     }
     isInitialized() {
         return this.initialized;
@@ -158,7 +166,7 @@ export class Bot extends EventEmitter {
             console.error(error);
         });
         this.voiceConnection.on('debug', console.log);
-        const voiceChannelName = voiceChannel.name;
+        //const voiceChannelName = voiceChannel.name;
         const handlerDisconnectTest = (oldState, newState) => {
             // console.dir(newState, {depth: 5});
             console.log(`voiceConnection transitioned from ${oldState.status} to ${newState.status}`);
@@ -237,11 +245,14 @@ export class Bot extends EventEmitter {
         this.emit(BotEvent.Skipped, songSkipped);
     }
     stop() {
-        this.songQueue = [];
+        this.songQueue.setIndex(this.songQueue.getLenght());
         this.player.stop();
     }
     destroy() {
         this.client.destroy();
+    }
+    getClient() {
+        return this.client;
     }
     async generateSongInteraction(song, isPaused = false) {
         try {
@@ -345,50 +356,6 @@ export class Bot extends EventEmitter {
             content: 'Select Menu',
             components: [row]
         };
-    }
-}
-export class Song {
-    album;
-    artist;
-    key;
-    mediaKey;
-    title;
-    //public url: string;
-    ressource;
-    loaded;
-    pictureKey;
-    constructor(song) {
-        this.album = song.album;
-        this.artist = song.artist;
-        this.key = song.key;
-        this.mediaKey = song.mediaKey,
-            this.title = song.title;
-        //this.url = song.url;
-        this.loaded = song.loaded;
-        this.pictureKey = song.pictureKey;
-        this.ressource = song.ressource;
-    }
-    toJSON() {
-        return {
-            album: this.album,
-            artist: this.artist,
-            key: this.key,
-            mediaKey: this.mediaKey,
-            pictureKey: this.pictureKey,
-            title: this.title
-        };
-    }
-    static fromJSON(songJSON) {
-        return new Song({
-            album: songJSON.album,
-            artist: songJSON.artist,
-            key: songJSON.key,
-            mediaKey: songJSON.mediaKey,
-            loaded: false,
-            pictureKey: songJSON.pictureKey,
-            ressource: undefined,
-            title: songJSON.title
-        });
     }
 }
 //# sourceMappingURL=bot.js.map
