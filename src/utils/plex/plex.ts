@@ -1,4 +1,7 @@
+import { Readable } from "stream";
+import fetch from "node-fetch";
 import { PlexAPI, PlexAPIConfig } from "./plexAPI.js";
+import { AudioResource, createAudioResource } from "@discordjs/voice";
 
 export interface PlexResponseAlbum {
 	MediaContainer: {
@@ -135,9 +138,12 @@ export interface PlexSong {
 	artist: string;
 	title: string;
 	key: string;
+	mediaKey: string;
 	album: string;
-	url: string;
-	pictureURL: string;
+	ressource: AudioResource | undefined;
+	//url: string;
+	pictureKey: string;
+	loaded: boolean;
 }
 
 export interface PlexTrack {
@@ -147,6 +153,7 @@ export interface PlexTrack {
 	index: number;
 	title: string;
 	key: string;
+	mediaKey: string;
 	summary: string;
 	type: string;
 	bitrate: number;
@@ -198,13 +205,40 @@ export class Plex extends PlexAPI {
 		const tracks: PlexTrack[] = await this.getTracksFromName(name);
 		const songs: PlexSong[] = []
 		for (const track of tracks) {
-			songs.push(trackToSong(track, this.generateURLFromKey.bind(this)));
+			songs.push(trackToSong(track));
 		}
 		return songs;
 	}
 
+	public async getSongFromKey(key: string): Promise<PlexSong> {
+		const queryHTTP = encodeURI(key);
+		const res: PlexResponseQuery = await this.query(queryHTTP);
+		console.dir(res);
+		const track = dataToTrack(res.MediaContainer.Metadata[0]);
+		return trackToSong(track);
+	}
+
 	private generateURLFromKey(key: string) : string {
 		return (this.https ? 'https://' : 'http://') + this.hostname + ':' + this.port + key + '?X-Plex-Token=' + this.token;
+	}
+
+	/**
+	 * Load the song from the plex server. Once the song is loaded, the attribute `loaded` will be set to true.
+	 */
+	public async loadSong(song: PlexSong) {
+		if (song.loaded) return;
+
+		const response = await fetch(this.generateURLFromKey(song.mediaKey));
+		if (response.body === null) throw new Error(`"${song.mediaKey} is empty."`)
+		const readstream = Readable.from(response.body, {highWaterMark: 20971520});
+		song.ressource = createAudioResource(readstream);
+		song.loaded = true;
+	}
+
+	public async loadPicture(song: PlexSong): Promise<ArrayBuffer> {
+		const imageResponse = await fetch(this.generateURLFromKey(song.pictureKey));
+		const imageBuffer = await imageResponse.arrayBuffer();
+		return imageBuffer;
 	}
 
 }
@@ -221,7 +255,8 @@ function dataToTrack(data: PlexResponseMetadata): PlexTrack {
 		file: data.Media[0].Part[0].file,
 		id: data.Media[0].id,
 		index: data.index,
-		key: data.Media[0].Part[0].key,
+		key: data.key,
+		mediaKey: data.Media[0].Part[0].key,
 		size: data.Media[0].Part[0].size,
 		summary: data.summary,
 		thumb: data.thumb,
@@ -233,13 +268,16 @@ function dataToTrack(data: PlexResponseMetadata): PlexTrack {
 	}
 }
 
-function trackToSong(track: PlexTrack, generateURL: (key: string) => string = () => {return ''} ): PlexSong {
+function trackToSong(track: PlexTrack): PlexSong {
 	return {
 		album: track.album,
 		artist: track.artist,
 		key: track.key,
+		mediaKey: track.mediaKey,
 		title: track.title,
-		url: generateURL(track.key),
-		pictureURL: generateURL(track.thumb),
+		loaded: false,
+		ressource: undefined,
+		//url: generateURL(track.key),
+		pictureKey: track.thumb,
 	}
 }

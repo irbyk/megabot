@@ -33,22 +33,21 @@ export class InteractionSong {
             .setImage('attachment://cover.jpg');
         return [embed];
     }
-    async generateFile() {
-        if (this.song === undefined)
-            throw new Error('No song attached to the interaction.');
-        const imageResponse = await fetch(this.song.pictureURL);
-        const imageBuffer = await imageResponse.arrayBuffer();
-        return [{
-                attachment: Buffer.from(imageBuffer),
-                name: "cover.jpg"
-            }];
-    }
+    // public async generateFile(): Promise<AttachmentPayload[]>{
+    // 	if (this.song === undefined) throw new Error('No song attached to the interaction.');
+    // 	const imageResponse = await fetch(this.song.pictureURL);
+    // 	const imageBuffer = await imageResponse.arrayBuffer();
+    // 	return [{
+    // 		attachment: Buffer.from(imageBuffer),
+    // 		name: "cover.jpg"
+    // 	}]
+    // }
     async init() {
         if (this.song === undefined)
             throw new Error('No song attached to the interaction.');
         this.embeds = this.generateEmbeds();
         this.components = this.generateButtons();
-        this.files = await this.generateFile();
+        // this.files = await this.generateFile();
         return this;
     }
 }

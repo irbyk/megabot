@@ -10,18 +10,13 @@ export const command = {
     async execute(interaction, bot) {
         const channelName = interaction.options.getString('name');
         if (channelName === null) {
-            const voiceChannel = interaction.member.voice.channel;
-            if (voiceChannel) {
-                try {
-                    bot.connectToVoicChannel(voiceChannel);
-                }
-                catch (error) {
-                    console.error(error);
-                }
-                await interaction.reply('Connected !');
+            try {
+                connectToVoiceChannel(interaction, bot);
             }
-            else {
-                await interaction.reply('Please provide a voice channel name or connect to one.');
+            catch (error) {
+                console.error(error);
+                await interaction.reply('You are not connected to a voice channel.\
+				 Please connect to one, or provide a voice channel name.');
             }
             return;
         }
@@ -39,4 +34,13 @@ export const command = {
         }
     },
 };
+export function connectToVoiceChannel(interaction, bot) {
+    const voiceChannel = interaction.member.voice.channel;
+    if (voiceChannel) {
+        bot.connectToVoicChannel(voiceChannel);
+    }
+    else {
+        throw new Error("No connected to a voice channel.");
+    }
+}
 //# sourceMappingURL=connect.js.map

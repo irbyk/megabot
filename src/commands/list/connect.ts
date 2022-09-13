@@ -14,18 +14,13 @@ export const command =  {
 	async execute(interaction: ChatInputCommandInteraction, bot: Bot) {
 		const channelName = interaction.options.getString('name');
 		if (channelName === null) {
-			const voiceChannel =  (interaction.member as GuildMember).voice.channel;
-			if( voiceChannel) {
-				try {
-					bot.connectToVoicChannel(voiceChannel);
-				} catch (error) {
-					console.error(error);
-				}
-				await interaction.reply('Connected !');
-			} else {
-				await interaction.reply('Please provide a voice channel name or connect to one.');
+			try {
+				connectToVoiceChannel(interaction, bot);
+			} catch(error) {
+				console.error(error);
+				await interaction.reply('You are not connected to a voice channel.\
+				 Please connect to one, or provide a voice channel name.');
 			}
-			
 			return
 		}
 		const voiceChannel = bot.searchVoiceChannel(channelName);
@@ -42,3 +37,12 @@ export const command =  {
 
 	},
 };
+
+export function connectToVoiceChannel(interaction: ChatInputCommandInteraction, bot: Bot) {
+	const voiceChannel =  (interaction.member as GuildMember).voice.channel;
+	if( voiceChannel) {
+		bot.connectToVoicChannel(voiceChannel);
+	} else {
+		throw new Error("No connected to a voice channel.")
+	}
+}

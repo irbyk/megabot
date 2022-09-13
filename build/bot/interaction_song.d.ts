@@ -12,7 +12,6 @@ export declare class InteractionSong implements InteractionReplyOptions {
     addSong(song: Song): void;
     generateButtons(isPaused?: boolean): ActionRowBuilder<ButtonBuilder>[];
     generateEmbeds(): EmbedBuilder[];
-    generateFile(): Promise<AttachmentPayload[]>;
     init(): Promise<InteractionSong>;
 }
 //# sourceMappingURL=interaction_song.d.ts.map

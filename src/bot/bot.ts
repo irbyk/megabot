@@ -1,4 +1,4 @@
-import { ChannelType, Client, InteractionReplyOptions, ActionRowBuilder, ButtonBuilder, EmbedBuilder, VoiceBasedChannel, ButtonStyle, Interaction, CacheType } from "discord.js";
+import { ChannelType, Client, InteractionReplyOptions, ActionRowBuilder, ButtonBuilder, EmbedBuilder, VoiceBasedChannel, ButtonStyle, Interaction, CacheType, SelectMenuBuilder } from "discord.js";
 import { initializeCommand } from "../commands/command.js";
 import { Plex, PlexSong } from "../utils/plex/plex.js"
 import { PlexAPIConfig } from "../utils/plex/plexAPI.js";
@@ -72,7 +72,7 @@ export class Bot extends EventEmitter {
 			this.song = undefined;
 			if (this.songQueue.length > 0) {
 				this.song = this.songQueue.shift();
-				//this.playSong();
+				this.playSong(this.song);
 			}
 			this.emit(BotEvent.Stopped);
 			console.log("AudioPlayerStatus.Idle");
@@ -131,6 +131,10 @@ export class Bot extends EventEmitter {
 
 	public async searchSong(songName: string): Promise<PlexSong> {
 		return (await this.plex.getSongsFromName(songName))[0];
+	}
+
+	public async searchSongs(songName: string): Promise<Song[]> {
+		return (await this.plex.getSongsFromName(songName)).map(song => new Song(song) );
 	}
 
 	public async getSongInteraction(): Promise<InteractionReplyOptions> {
@@ -204,7 +208,7 @@ export class Bot extends EventEmitter {
 		if (this.playing) {
 			throw new Error("The bot is already playing.");
 		}
-		await this.playSong();
+		await this.playSong(this.song);
 		this.emit(BotEvent.Played);
 	}
 
@@ -222,14 +226,14 @@ export class Bot extends EventEmitter {
 		this.emit(BotEvent.Played);
 	}
 
-	public async playSong() {
-		if (this.song === undefined) {
+	public async playSong(song: Song | undefined) {
+		if (song === undefined) {
 			throw new Error("No song to be played.");
 		}
-		await this.song.load();
-		if (this.song.loaded) {
-			this.songInteraction = await this.generateSongInteraction(this.song);
-			this.player.play(this.song.ressource as AudioResource);
+		await this.plex.loadSong(song);
+		if (song.loaded) {
+			this.songInteraction = await this.generateSongInteraction(song);
+			this.player.play(song.ressource as AudioResource);
 		}
 	}
 
@@ -270,8 +274,7 @@ export class Bot extends EventEmitter {
 
 	private async generateSongInteraction(song: PlexSong, isPaused = false): Promise<InteractionReplyOptions> {
 		try {
-			const imageResponse = await fetch(song.pictureURL);
-			const imageBuffer = await imageResponse.arrayBuffer();
+			const imageBuffer = await this.plex.loadPicture(song);
 			const row = new ActionRowBuilder<ButtonBuilder>()
 			.addComponents(
 				new ButtonBuilder()
@@ -342,6 +345,45 @@ export class Bot extends EventEmitter {
 			}
 		}
 	}
+
+	public async setSelectMenu(selectMenu: SelectMenuBuilder): Promise<InteractionReplyOptions>{
+		const row = new ActionRowBuilder<SelectMenuBuilder>()
+			.addComponents(selectMenu);
+		this.client.on('interactionCreate', async interaction => {
+			if (!interaction.isSelectMenu()) return;
+			if (interaction.customId === selectMenu.data.custom_id) {
+				const song = new Song(await this.plex.getSongFromKey(interaction.values[0]));
+				console.log("Song selected : ");
+				console.dir(song);
+				const songInteraction = await this.generateSongInteraction(song);
+				await interaction.update({
+					content: songInteraction.content,
+					embeds: songInteraction.embeds,
+					components: songInteraction.components,
+					files: songInteraction.files
+				});
+				if (this.isInVocalChannel() && !this.isPlaying()) {
+					this.playSong(song)
+				} else {
+					this.songQueue.push(song);
+				}
+			}
+		});
+		return {
+			content : 'Select Menu',
+			components: [row]
+		}
+	}
+}
+
+export interface SongJSON {
+	album: string;
+	artist: string;
+	key: string;
+	mediaKey: string;
+	title: string;
+	pictureKey: string;
+
 }
 
 export class Song implements PlexSong {
@@ -349,33 +391,48 @@ export class Song implements PlexSong {
 	public album: string;
 	public artist: string;
 	public key: string;
+	public mediaKey: string;
 	public title: string;
-	public url: string;
+	//public url: string;
 	public ressource: AudioResource | undefined;
 	public loaded: boolean;
-	public pictureURL: string;
+	public pictureKey: string;
 
 
 	constructor(song: PlexSong) {
 		this.album = song.album;
 		this.artist = song.artist;
 		this.key = song.key;
+		this.mediaKey = song.mediaKey,
 		this.title = song.title;
-		this.url = song.url;
-		this.loaded = false;
-		this.pictureURL = song.pictureURL;
+		//this.url = song.url;
+		this.loaded = song.loaded;
+		this.pictureKey = song.pictureKey;
+		this.ressource = song.ressource;
 	}
-	/**
-	 * Load the song from the plex server. On ce song is loaded the attribute loaded will be set to true.
-	 */
-	public async load(): Promise<void> {
-		if (this.loaded) return;
 
-		const response = await fetch(this.url);
-		if (response.body === null) throw new Error(`"${this.url} is empty."`)
-		const readstream = Readable.from(response.body, {highWaterMark: 20971520});
-		this.ressource = createAudioResource(readstream);
-		this.loaded = true;
+	public toJSON(): SongJSON {
+		return {
+			album: this.album,
+			artist: this.artist,
+			key: this.key,
+			mediaKey: this.mediaKey,
+			pictureKey: this.pictureKey,
+			title: this.title
+		}
+	}
+
+	public static fromJSON(songJSON: SongJSON): PlexSong {
+		return new Song({
+			album: songJSON.album,
+			artist: songJSON.artist,
+			key: songJSON.key,
+			mediaKey: songJSON.mediaKey,
+			loaded: false,
+			pictureKey: songJSON.pictureKey,
+			ressource: undefined,
+			title: songJSON.title
+		});
 	}
 
 }

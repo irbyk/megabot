@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { connectToVoiceChannel } from "./connect.js";
 export const command = {
     data: new SlashCommandBuilder()
         .setName('play')
@@ -18,6 +19,16 @@ export const command = {
         const song = await bot.searchSong(songName);
         console.dir(song);
         try {
+            if (!bot.isInVocalChannel()) {
+                try {
+                    connectToVoiceChannel(interaction, bot);
+                }
+                catch (error) {
+                    console.error(error);
+                    interaction.reply("The bot is not in a voice channel and so do you.\
+					 Please connect to a voice channel and retry.");
+                }
+            }
             bot.loadSong(song);
             if (!bot.isPlaying())
                 await bot.play();

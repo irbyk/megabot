@@ -5,5 +5,4 @@ export declare const command: {
     data: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
     execute(interaction: ChatInputCommandInteraction, bot: Bot): Promise<void>;
 };
-export declare function connectToVoiceChannel(interaction: ChatInputCommandInteraction, bot: Bot): void;
-//# sourceMappingURL=connect.d.ts.map
+//# sourceMappingURL=search.d.ts.map

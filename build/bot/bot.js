@@ -2,8 +2,6 @@ import { ChannelType, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle
 import { initializeCommand } from "../commands/command.js";
 import { Plex } from "../utils/plex/plex.js";
 import { createAudioPlayer, createAudioResource, joinVoiceChannel, AudioPlayerStatus, VoiceConnectionStatus, NoSubscriberBehavior } from "@discordjs/voice";
-import fetch from "node-fetch";
-import { Readable } from "stream";
 import EventEmitter from "events";
 export var BotEvent;
 (function (BotEvent) {
@@ -66,7 +64,7 @@ export class Bot extends EventEmitter {
             this.song = undefined;
             if (this.songQueue.length > 0) {
                 this.song = this.songQueue.shift();
-                //this.playSong();
+                this.playSong(this.song);
             }
             this.emit(BotEvent.Stopped);
             console.log("AudioPlayerStatus.Idle");
@@ -118,6 +116,9 @@ export class Bot extends EventEmitter {
     }
     async searchSong(songName) {
         return (await this.plex.getSongsFromName(songName))[0];
+    }
+    async searchSongs(songName) {
+        return (await this.plex.getSongsFromName(songName)).map(song => new Song(song));
     }
     async getSongInteraction() {
         if (this.songInteraction === undefined) {
@@ -185,7 +186,7 @@ export class Bot extends EventEmitter {
         if (this.playing) {
             throw new Error("The bot is already playing.");
         }
-        await this.playSong();
+        await this.playSong(this.song);
         this.emit(BotEvent.Played);
     }
     async testPlay() {
@@ -201,14 +202,14 @@ export class Bot extends EventEmitter {
         this.player.play(audioRessourceTest);
         this.emit(BotEvent.Played);
     }
-    async playSong() {
-        if (this.song === undefined) {
+    async playSong(song) {
+        if (song === undefined) {
             throw new Error("No song to be played.");
         }
-        await this.song.load();
-        if (this.song.loaded) {
-            this.songInteraction = await this.generateSongInteraction(this.song);
-            this.player.play(this.song.ressource);
+        await this.plex.loadSong(song);
+        if (song.loaded) {
+            this.songInteraction = await this.generateSongInteraction(song);
+            this.player.play(song.ressource);
         }
     }
     pause() {
@@ -244,8 +245,7 @@ export class Bot extends EventEmitter {
     }
     async generateSongInteraction(song, isPaused = false) {
         try {
-            const imageResponse = await fetch(song.pictureURL);
-            const imageBuffer = await imageResponse.arrayBuffer();
+            const imageBuffer = await this.plex.loadPicture(song);
             const row = new ActionRowBuilder()
                 .addComponents(new ButtonBuilder()
                 .setCustomId('playButton')
@@ -316,37 +316,79 @@ export class Bot extends EventEmitter {
             };
         }
     }
+    async setSelectMenu(selectMenu) {
+        const row = new ActionRowBuilder()
+            .addComponents(selectMenu);
+        this.client.on('interactionCreate', async (interaction) => {
+            if (!interaction.isSelectMenu())
+                return;
+            if (interaction.customId === selectMenu.data.custom_id) {
+                const song = new Song(await this.plex.getSongFromKey(interaction.values[0]));
+                console.log("Song selected : ");
+                console.dir(song);
+                const songInteraction = await this.generateSongInteraction(song);
+                await interaction.update({
+                    content: songInteraction.content,
+                    embeds: songInteraction.embeds,
+                    components: songInteraction.components,
+                    files: songInteraction.files
+                });
+                if (this.isInVocalChannel() && !this.isPlaying()) {
+                    this.playSong(song);
+                }
+                else {
+                    this.songQueue.push(song);
+                }
+            }
+        });
+        return {
+            content: 'Select Menu',
+            components: [row]
+        };
+    }
 }
 export class Song {
     album;
     artist;
     key;
+    mediaKey;
     title;
-    url;
+    //public url: string;
     ressource;
     loaded;
-    pictureURL;
+    pictureKey;
     constructor(song) {
         this.album = song.album;
         this.artist = song.artist;
         this.key = song.key;
-        this.title = song.title;
-        this.url = song.url;
-        this.loaded = false;
-        this.pictureURL = song.pictureURL;
+        this.mediaKey = song.mediaKey,
+            this.title = song.title;
+        //this.url = song.url;
+        this.loaded = song.loaded;
+        this.pictureKey = song.pictureKey;
+        this.ressource = song.ressource;
     }
-    /**
-     * Load the song from the plex server. On ce song is loaded the attribute loaded will be set to true.
-     */
-    async load() {
-        if (this.loaded)
-            return;
-        const response = await fetch(this.url);
-        if (response.body === null)
-            throw new Error(`"${this.url} is empty."`);
-        const readstream = Readable.from(response.body, { highWaterMark: 20971520 });
-        this.ressource = createAudioResource(readstream);
-        this.loaded = true;
+    toJSON() {
+        return {
+            album: this.album,
+            artist: this.artist,
+            key: this.key,
+            mediaKey: this.mediaKey,
+            pictureKey: this.pictureKey,
+            title: this.title
+        };
+    }
+    static fromJSON(songJSON) {
+        return new Song({
+            album: songJSON.album,
+            artist: songJSON.artist,
+            key: songJSON.key,
+            mediaKey: songJSON.mediaKey,
+            loaded: false,
+            pictureKey: songJSON.pictureKey,
+            ressource: undefined,
+            title: songJSON.title
+        });
     }
 }
 //# sourceMappingURL=bot.js.map

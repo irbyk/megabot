@@ -1,4 +1,5 @@
 import { PlexAPI, PlexAPIConfig } from "./plexAPI.js";
+import { AudioResource } from "@discordjs/voice";
 export interface PlexResponseAlbum {
     MediaContainer: {
         size: number;
@@ -130,9 +131,11 @@ export interface PlexSong {
     artist: string;
     title: string;
     key: string;
+    mediaKey: string;
     album: string;
-    url: string;
-    pictureURL: string;
+    ressource: AudioResource | undefined;
+    pictureKey: string;
+    loaded: boolean;
 }
 export interface PlexTrack {
     duration: number;
@@ -141,6 +144,7 @@ export interface PlexTrack {
     index: number;
     title: string;
     key: string;
+    mediaKey: string;
     summary: string;
     type: string;
     bitrate: number;
@@ -163,6 +167,12 @@ export declare class Plex extends PlexAPI {
     sendQuery(query: string, type: number): Promise<PlexResponseQuery>;
     getTracksFromName(name: string): Promise<PlexTrack[]>;
     getSongsFromName(name: string): Promise<PlexSong[]>;
+    getSongFromKey(key: string): Promise<PlexSong>;
     private generateURLFromKey;
+    /**
+     * Load the song from the plex server. Once the song is loaded, the attribute `loaded` will be set to true.
+     */
+    loadSong(song: PlexSong): Promise<void>;
+    loadPicture(song: PlexSong): Promise<ArrayBuffer>;
 }
 //# sourceMappingURL=plex.d.ts.map

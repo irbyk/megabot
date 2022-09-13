@@ -56,7 +56,7 @@
     "@discordjs/voice": "*",
     "bufferutil": "^4.0.6",
     "discord-api-types": "*",
-    "discord.js": "^14.0.3",
+    "discord.js": "^14.3.0",
     "erlpack": "github:discord/erlpack",
     "fast-xml-parser": "*",
     "ffmpeg-static": "*",
